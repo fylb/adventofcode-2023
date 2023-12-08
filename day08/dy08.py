@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from functools import reduce
+from math import gcd
 
 class Node:
     def __init__(self, name):
@@ -35,6 +37,47 @@ class Direction:
 
         return i
 
+    def navigate(self, start_node, condition):
+        i = 0
+        current_node = start_node
+        found = False
+        while not found:
+            for c in self.directions:
+                match c:
+                    case "L":
+                        next_node = current_node.left
+                    case "R":
+                        next_node = current_node.right
+
+                #print(f"{current_node} / {c} => {next_node}")
+                current_node = next_node
+                i = i+1
+                if condition(next_node):
+                    found = True
+                    break
+
+        return i
+
+    def is_prime(self, n):
+        for i in range(2,n):
+            if n%i == 0:
+                return False
+        return True
+
+    def lcm(self, a,b):
+        return a * b // gcd(a,b)
+
+    def navigate3(self, nodes):
+        i = 0
+        start_nodes = [node for node in nodes if node.name[2] == "A"]
+        print(f"direction length = {len(self.directions)}")
+        loops_to_z = []
+        for node in start_nodes:
+            n = self.navigate(node, lambda x: x.name[2] == "Z")
+            print(f"{node} => {n} {self.is_prime(n)}")
+            loops_to_z.append(n)
+        print(f"sol: {reduce(self.lcm, loops_to_z)}")
+        return i
 
     def navigate2(self, nodes):
         i = 0
@@ -77,7 +120,7 @@ class InputFile:
             nodes[s[0].strip()].right = nodes[right.strip()]
 
         #print(str(direction.navigate(nodes['AAA'])))
-        print(str(direction.navigate2(nodes.values())))
+        print(str(direction.navigate3(nodes.values())))
 
 def main():
     with open('input.txt', 'r') as input_file:
