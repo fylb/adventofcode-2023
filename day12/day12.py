@@ -48,12 +48,7 @@ class Row:
         match current_row[index]:
             case '.':
                 self.combination2(index+1, current_row, to_match)
-            case '?':
-                new_row_1 = current_row[:index] + "." + current_row[index + 1:]
-                # if len(to_match) > 0:
-                #     new_row_2 = current_row[:index] + "#" + current_row[index + 1:]
-                #     self.combination2(index, new_row_2, to_match)
-
+            case '?' | '#':
                 if len(to_match) > 0 and index+to_match[0] < len(current_row):
                     ok = all([c == "#" or c == "?" for c in current_row[index:index+ to_match[0]]])
                     ok = ok and (current_row[index + to_match[0]] == "?" or current_row[index + to_match[0]] == ".")
@@ -66,23 +61,9 @@ class Row:
                         new_row_2 = current_row[:index] + "#" * to_match[0] + "." + current_row[index + 1 + to_match[0]:]
                         self.combination2(index + to_match[0], new_row_2, to_match[1:])
 
-                self.combination2(index, new_row_1, to_match)
-
-            case '#':
-                if len(to_match) > 0 and index+to_match[0] < len(current_row):
-                    ok = all([c == "#" or c == "?" for c in current_row[index:index+ to_match[0]]])
-                    ok = ok and (current_row[index + to_match[0]] == "?" or current_row[index + to_match[0]] == ".")
-                    #print(f"{ok} {index} {to_match[0]} {current_row[index:index + to_match[0]]} {index + to_match[0]} {current_row[index + to_match[0]] }")
-                    if ok:
-                        new_row_2 = current_row[:index] + "#" * to_match[0] + "." + current_row[index + 1 + to_match[0]:]
-                        #print(f"replace with #: {new_row_2}")
-                        self.combination2(index + to_match[0], new_row_2, to_match[1:])
-                elif len(to_match) == 1 and index+to_match[0] == len(current_row):
-                    ok = all([c == "#" or c == "?" for c in current_row[index:index+ to_match[0]]]) and len(to_match) == 1
-                    #print(f"ok = {ok}")
-                    if ok:
-                        new_row_2 = current_row[:index] + "#" * to_match[0] + "." + current_row[index + 1 + to_match[0]:]
-                        self.combination2(index + to_match[0], new_row_2, to_match[1:])
+                if current_row[index] == '?':
+                    new_row_1 = current_row[:index] + "." + current_row[index + 1:]
+                    self.combination2(index, new_row_1, to_match)
 
     def valid(self, a_row):
         return [len(s) for s in filter(None, a_row.split('.'))] == self.matches
