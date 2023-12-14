@@ -3,7 +3,7 @@ import concurrent
 import concurrent.futures
 
 class Row:
-    def __init__(self, line, second=False):
+    def __init__(self, i, line, second=False):
         row, possibilities = line.strip().split(" ")
         if second:
             self.row = "?".join([row for i in range(5)])
@@ -12,7 +12,7 @@ class Row:
         else:
             self.row = row
             self.matches = [int(i) for i in possibilities.split(",")]
-
+        self.i = i
         self.comb = 0
 
 
@@ -24,7 +24,7 @@ class Row:
     def solve2(self):
         print(f"{self.row} {self.matches}")
         self.combination2(0, self.row, self.matches)
-        print(f"{self.row} {self.matches} ====> {self.comb}")
+        print(f"{self.i} {self.row} {self.matches} ====> {self.comb}")
         return self.comb
 
     def combination(self, current_row):
@@ -40,7 +40,7 @@ class Row:
 
     def combination2(self, index, current_row, to_match):
         #print(f"{index} {current_row}")
-        if index > len(current_row)-1:
+        if index > len(current_row)-1 or len(to_match) == 0:
             if self.valid(current_row):
                 self.comb = self.comb + 1
             return
@@ -66,7 +66,7 @@ class Row:
                     self.combination2(index, new_row_1, to_match)
 
     def valid(self, a_row):
-        return [len(s) for s in filter(None, a_row.split('.'))] == self.matches
+        return [len(s) for s in filter(None, a_row.replace("?", ".").split('.'))] == self.matches
 
 
 class InputFile:
@@ -76,7 +76,7 @@ class InputFile:
     def parse(self):
         rows = []
         for y, line in enumerate(self.lines):
-            rows.append(Row(line, second=True))
+            rows.append(Row(y, line, second=True))
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [ executor.submit(r.solve2) for r in rows ]
