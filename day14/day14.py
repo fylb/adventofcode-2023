@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-from functools import reduce
-from math import gcd
-
+import os
+import time
 import numpy as np
+import pandas as pd
 
 class Puzzle:
     def __init__(self, lines):
@@ -23,40 +23,65 @@ class Puzzle:
 
     def cycle_clever(self):
         i = 0
-        while i < 1000000000:
+        while i < 1000000000-1:
             a = self.cycle(i)
             if a != 0:
                 print(a)
-                i = i + a * (1000000000 // a) - a +1
+                i = i + a * (1000000000 // a)
+                while i > 1000000000:
+                    i = i - a
+                print(f"new i = {i}")
             else:
                 i = i+1
+            if i >10000:
+                print(i)
+
+    def display(self):
+        # os.system('clear')
+        # print(self.arr)
+        # time.sleep(0.1)
+        pass
 
     def cycle(self, iteration):
-        print(self.arr)
-        if iteration > 2:
-            exit(0)
         if iteration % 1000 == 0:
             print(iteration)
         self.shift_north()
-        north = self.arr.data.tobytes()
+        north_hash = "".join([str(r) for r in self.arr])
+        #print(north_hash)
+        # north.flags.writeable = False
+        # north_hash = hash(north.data)
+        self.display()
         self.shift_west()
+        self.display()
         self.shift_south()
+        self.display()
         self.shift_east()
-        if north in self.norths and iteration < 990000000:
-            print(f"Found it at iteration {iteration}")
-            print(str(north))
-            return iteration - self.norths[north]
-        self.norths[str(north)] = iteration
+        self.display()
+        if north_hash in self.norths and iteration < 990000000:
+            print(f"Found it at iteration {iteration} / {self.norths[north_hash]}")
+            #print(str(north))
+            return iteration - self.norths[north_hash]
+        self.norths[north_hash] = iteration
         return 0
 
     def shift_rows(self, direction):
         shift = False
-        for row in range(self.arr.shape[0]):
-            for col in range(self.arr.shape[1]):
+        match direction:
+            case -1:
+                range_rows=list(range(self.arr.shape[0]))
+                range_columns=list(range(self.arr.shape[1]))
+            case 1:
+                range_rows=list(range(self.arr.shape[0]))
+                range_rows.reverse()
+                range_columns=list(range(self.arr.shape[1]))
+                range_columns.reverse()
+
+        for row in range_rows:
+            for col in range_columns:
                 if self.arr[row][col] == 'O':
                     idx_dest = row+direction
                     f=False
-                    while 0 <= idx_dest < self.arr.shape[0] - 1 and self.arr[idx_dest][col] == '.':
+                    while 0 <= idx_dest < self.arr.shape[0] and self.arr[idx_dest][col] == '.':
                         idx_dest = idx_dest + direction
                         f = True
                     if f:
@@ -66,12 +91,22 @@ class Puzzle:
 
     def shift_columns(self, direction):
         shift = False
-        for row in range(self.arr.shape[0]):
-            for col in range(self.arr.shape[1]):
+        match direction:
+            case -1:
+                range_rows=list(range(self.arr.shape[0]))
+                range_columns=list(range(self.arr.shape[1]))
+            case 1:
+                range_rows=list(range(self.arr.shape[0]))
+                range_rows.reverse()
+                range_columns=list(range(self.arr.shape[1]))
+                range_columns.reverse()
+
+        for row in range_rows:
+            for col in range_columns:
                 if self.arr[row][col] == 'O':
                     idx_dest = col+direction
                     f=False
-                    while 0 <= idx_dest < self.arr.shape[0] - 1 and  self.arr[row][idx_dest] == '.':
+                    while 0 <= idx_dest < self.arr.shape[0] and  self.arr[row][idx_dest] == '.':
                         idx_dest = idx_dest + direction
                         f = True
                     if f:
@@ -128,13 +163,12 @@ class InputFile:
             c = [c for c in l]
             a.append(c)
         p = Puzzle(a)
-        print(p.arr)
         p.cycle_clever()
         print(p.load())
 
 
 def main():
-    with open('sample.txt', 'r') as input_file:
+    with open('input.txt', 'r') as input_file:
         f = InputFile(input_file.readlines())
     f.parse2()
 
