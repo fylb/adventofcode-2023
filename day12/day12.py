@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import concurrent
 import concurrent.futures
+import re
+
 
 class Row:
     def __init__(self, i, line, second=False):
@@ -40,14 +42,18 @@ class Row:
 
     def combination2(self, index, current_row, to_match):
         #print(f"{index} {current_row}")
-        if index > len(current_row)-1 or len(to_match) == 0:
+        if not self.possible(index, current_row, to_match):
+            return
+        if index > len(current_row)-1 or len(to_match) == 0 or current_row.find('?') < 0:
             if self.valid(current_row):
                 self.comb = self.comb + 1
             return
 
         match current_row[index]:
             case '.':
-                self.combination2(index+1, current_row, to_match)
+                while current_row[index] == '.' and index < len(current_row):
+                    index = index + 1
+                self.combination2(index, current_row, to_match)
             case '?' | '#':
                 if len(to_match) > 0 and index+to_match[0] < len(current_row):
                     ok = all([c == "#" or c == "?" for c in current_row[index:index+ to_match[0]]])
@@ -67,6 +73,16 @@ class Row:
 
     def valid(self, a_row):
         return [len(s) for s in filter(None, a_row.replace("?", ".").split('.'))] == self.matches
+
+    def possible(self, index, a_row, to_match):
+        s = a_row[index:]
+        if s.count('#') > sum(to_match):
+            return False
+        if s.count('##') > sum(filter(lambda x: x > 1, to_match)):
+            return False
+        if s.count('###') > sum(filter(lambda x: x > 2, to_match)):
+            return False
+        return True
 
 
 class InputFile:
