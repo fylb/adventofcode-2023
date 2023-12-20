@@ -28,7 +28,6 @@ class XMAS:
         return not self.rejected and not self.accepted
 
     def go_to(self, node):
-        print(f" -> {node.name}")
         self.node = node
         return True
 
@@ -49,7 +48,6 @@ class NodePart:
         self.value_to_compare = -1
         self.field_to_compare = ''
         self.condition = condition
-        self.origin = None
         self.part_of = node
         self.index = index
 
@@ -111,13 +109,61 @@ class NodePart:
 
     def path_to_acceptance(self):
         print(self)
-        node_parts = self.part_of.node_parts[0: self.index]
-        parent = self.origin
-        print(self.origin)
-        while parent.name != 'in':
+        node_parts_to_negate = self.part_of.node_parts[0: self.index]
+        node_parts_to_affirmate = [self]
+        current = self.part_of
+        parent = self.part_of.origin
+        while parent is not None:
+            index_in_parent = next(i for i,p in enumerate(parent.node_parts) if p.goto is not None and p.goto.name == current.name)
+            node_parts_to_negate = node_parts_to_negate + parent.node_parts[0: index_in_parent]
+            node_parts_to_affirmate.append(parent.node_parts[index_in_parent])
+            current = parent
             parent = parent.origin
-            node_parts = node_parts + parent.part_of.node_parts[0: parent.index]
 
+        xmas_min = XMAS("{x=1,m=1,a=1,s=1}")
+        xmas_max = XMAS("{x=4000,m=4000,a=4000,s=4000}")
+
+        for node_part in node_parts_to_affirmate:
+            xmas_min, xmas_max = node_part.affirmate(xmas_min, xmas_max)
+        for node_part in node_parts_to_negate:
+            xmas_min, xmas_max = node_part.negate(xmas_min, xmas_max)
+
+        print(f"must negate {[str(n) for n in node_parts_to_negate]}")
+        print(f"must affirm {[str(n) for n in node_parts_to_affirmate]}")
+
+        print(xmas_min, xmas_max)
+        if xmas_min is not None:
+            r = (xmas_max.x - xmas_min.x + 1) * (xmas_max.m - xmas_min.m + 1) * (xmas_max.a - xmas_min.a + 1) * (xmas_max.s - xmas_min.s + 1)
+            if r > 0:
+                return r
+        return 0
+
+
+    def affirmate(self, xmas_min, xmas_max):
+        if xmas_min is None:
+            return None, None
+        if self.field_to_compare != '':
+            if self.gt:
+                current_value = getattr(xmas_min, self.field_to_compare)
+                setattr(xmas_min, self.field_to_compare, max(current_value, self.value_to_compare + 1))
+            else:
+                current_value = getattr(xmas_max, self.field_to_compare)
+                setattr(xmas_max, self.field_to_compare, min(current_value, self.value_to_compare - 1))
+        return xmas_min, xmas_max
+
+    def negate(self, xmas_min, xmas_max):
+        if xmas_min is None:
+            return None, None
+        if self.field_to_compare != '':
+            if self.gt:
+                current_max = getattr(xmas_max, self.field_to_compare)
+                setattr(xmas_max, self.field_to_compare, min(current_max, self.value_to_compare))
+            elif not self.gt:
+                current_min = getattr(xmas_min, self.field_to_compare)
+                setattr(xmas_min, self.field_to_compare, max(current_min, self.value_to_compare))
+        elif self.do_accept or self.do_reject:
+            return None, None
+        return xmas_min, xmas_max
 
     def __str__(self):
         return self.condition
@@ -127,6 +173,7 @@ class Node:
         self.name = line.split("{")[0]
         self.line = line
         self.node_parts = []
+        self.origin = None
 
     def parse(self, all_nodes):
         conditions = self.line.split("{")[1][:-1]
@@ -191,15 +238,16 @@ class InputFile:
             n.parse(nodes)
 
         accept_nodes = []
+        s = 0
         for node in nodes.values():
             for node_part in node.node_parts:
                 if node_part.do_accept:
                     accept_nodes.append(node_part)
-                    print(node_part)
-                    print(node_part.path_to_acceptance())
+                    s = s + node_part.path_to_acceptance()
+        print(s)
 
 def main():
-    with open('sample.txt', 'r') as input_file:
+    with open('input.txt', 'r') as input_file:
         f = InputFile(input_file.readlines())
     f.parse2()
 
